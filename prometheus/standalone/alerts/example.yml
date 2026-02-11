@@ -1,0 +1,43 @@
+groups:
+  - name: example_alerts
+    interval: 30s
+    rules:
+      # 实例宕机告警
+      - alert: InstanceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "实例 {{ $labels.instance }} 宕机"
+          description: "{{ $labels.job }} 实例 {{ $labels.instance }} 已经宕机超过 5 分钟"
+
+      # CPU 使用率告警
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "高 CPU 使用率"
+          description: "实例 {{ $labels.instance }} CPU 使用率超过 80%"
+
+      # 内存使用率告警
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "高内存使用率"
+          description: "实例 {{ $labels.instance }} 内存使用率超过 85%"
+
+      # 磁盘空间告警
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "磁盘空间不足"
+          description: "实例 {{ $labels.instance }} 磁盘剩余空间少于 15%"

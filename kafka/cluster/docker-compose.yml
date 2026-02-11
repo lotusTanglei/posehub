@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    container_name: zookeeper-cluster
+    restart: unless-stopped
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: yes
+      TZ: Asia/Shanghai
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper-data:/bitnami/zookeeper
+    networks:
+      - kafka-cluster-net
+
+  kafka-broker1:
+    image: bitnami/kafka:3.6
+    container_name: kafka-broker1
+    restart: unless-stopped
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_BROKER_ID: 1
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker1:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_CFG_MIN_INSYNC_REPLICAS: 2
+      TZ: Asia/Shanghai
+      ALLOW_PLAINTEXT_LISTENER: yes
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka-broker1-data:/bitnami/kafka
+    networks:
+      - kafka-cluster-net
+    depends_on:
+      - zookeeper
+
+  kafka-broker2:
+    image: bitnami/kafka:3.6
+    container_name: kafka-broker2
+    restart: unless-stopped
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_BROKER_ID: 2
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker2:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_CFG_MIN_INSYNC_REPLICAS: 2
+      TZ: Asia/Shanghai
+      ALLOW_PLAINTEXT_LISTENER: yes
+    ports:
+      - "9093:9092"
+    volumes:
+      - kafka-broker2-data:/bitnami/kafka
+    networks:
+      - kafka-cluster-net
+    depends_on:
+      - zookeeper
+
+  kafka-broker3:
+    image: bitnami/kafka:3.6
+    container_name: kafka-broker3
+    restart: unless-stopped
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_BROKER_ID: 3
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker3:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_CFG_MIN_INSYNC_REPLICAS: 2
+      TZ: Asia/Shanghai
+      ALLOW_PLAINTEXT_LISTENER: yes
+    ports:
+      - "9094:9092"
+    volumes:
+      - kafka-broker3-data:/bitnami/kafka
+    networks:
+      - kafka-cluster-net
+    depends_on:
+      - zookeeper
+
+  # Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-cluster-ui
+    restart: unless-stopped
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker1:9092,kafka-broker2:9092,kafka-broker3:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    networks:
+      - kafka-cluster-net
+    depends_on:
+      - kafka-broker1
+      - kafka-broker2
+      - kafka-broker3
+
+volumes:
+  zookeeper-data:
+    driver: local
+  kafka-broker1-data:
+    driver: local
+  kafka-broker2-data:
+    driver: local
+  kafka-broker3-data:
+    driver: local
+
+networks:
+  kafka-cluster-net:
+    driver: bridge

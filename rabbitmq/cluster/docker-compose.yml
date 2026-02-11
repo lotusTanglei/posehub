@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  rabbitmq1:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq-cluster-1
+    restart: unless-stopped
+    hostname: rabbitmq1
+    environment:
+      RABBITMQ_ERLANG_COOKIE: rabbitmq_cluster_cookie
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin_password
+      RABBITMQ_DEFAULT_VHOST: /
+      TZ: Asia/Shanghai
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "25672:25672"
+    volumes:
+      - rabbitmq1-data:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    networks:
+      - rabbitmq-cluster-net
+
+  rabbitmq2:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq-cluster-2
+    restart: unless-stopped
+    hostname: rabbitmq2
+    environment:
+      RABBITMQ_ERLANG_COOKIE: rabbitmq_cluster_cookie
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin_password
+      RABBITMQ_DEFAULT_VHOST: /
+      TZ: Asia/Shanghai
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+      - "25673:25672"
+    volumes:
+      - rabbitmq2-data:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    networks:
+      - rabbitmq-cluster-net
+
+  rabbitmq3:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq-cluster-3
+    restart: unless-stopped
+    hostname: rabbitmq3
+    environment:
+      RABBITMQ_ERLANG_COOKIE: rabbitmq_cluster_cookie
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin_password
+      RABBITMQ_DEFAULT_VHOST: /
+      TZ: Asia/Shanghai
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+      - "25674:25672"
+    volumes:
+      - rabbitmq3-data:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    networks:
+      - rabbitmq-cluster-net
+
+  # HAProxy 负载均衡
+  haproxy:
+    image: haproxy:alpine
+    container_name: rabbitmq-lb
+    restart: unless-stopped
+    ports:
+      - "5670:5670"
+      - "15670:15670"
+      - "8404:8404"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - rabbitmq-cluster-net
+    depends_on:
+      - rabbitmq1
+      - rabbitmq2
+      - rabbitmq3
+
+volumes:
+  rabbitmq1-data:
+    driver: local
+  rabbitmq2-data:
+    driver: local
+  rabbitmq3-data:
+    driver: local
+
+networks:
+  rabbitmq-cluster-net:
+    driver: bridge

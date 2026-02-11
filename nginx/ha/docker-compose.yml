@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  nginx1:
+    image: nginx:alpine
+    container_name: nginx-ha-1
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs1:/var/log/nginx
+    networks:
+      - nginx-ha-net
+
+  nginx2:
+    image: nginx:alpine
+    container_name: nginx-ha-2
+    restart: unless-stopped
+    ports:
+      - "8082:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs2:/var/log/nginx
+    networks:
+      - nginx-ha-net
+
+  # Keepalived + HAProxy 负载均衡
+  haproxy:
+    image: haproxy:alpine
+    container_name: haproxy-lb
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8404:8404"  # 统计页面
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - nginx-ha-net
+    depends_on:
+      - nginx1
+      - nginx2
+
+networks:
+  nginx-ha-net:
+    driver: bridge

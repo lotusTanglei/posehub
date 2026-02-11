@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  postgres-primary:
+    image: postgres:16-alpine
+    container_name: postgres-primary
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: app_db
+      POSTGRES_REPLICATION_USER: replicator
+      POSTGRES_REPLICATION_PASSWORD: replica_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf
+    networks:
+      - postgres-ha-net
+
+  postgres-standby1:
+    image: postgres:16-alpine
+    container_name: postgres-standby1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Asia/Shanghai
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-standby1-data:/var/lib/postgresql/data
+    networks:
+      - postgres-ha-net
+    depends_on:
+      - postgres-primary
+
+  postgres-standby2:
+    image: postgres:16-alpine
+    container_name: postgres-standby2
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Asia/Shanghai
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-standby2-data:/var/lib/postgresql/data
+    networks:
+      - postgres-ha-net
+    depends_on:
+      - postgres-primary
+
+  # PgBouncer 连接池
+  pgbouncer:
+    image: pgbouncer/pgbouncer:latest
+    container_name: pgbouncer
+    restart: unless-stopped
+    ports:
+      - "6432:6432"
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./users.txt:/etc/pgbouncer/users.txt:ro
+    networks:
+      - postgres-ha-net
+    depends_on:
+      - postgres-primary
+      - postgres-standby1
+      - postgres-standby2
+
+volumes:
+  postgres-primary-data:
+    driver: local
+  postgres-standby1-data:
+    driver: local
+  postgres-standby2-data:
+    driver: local
+
+networks:
+  postgres-ha-net:
+    driver: bridge

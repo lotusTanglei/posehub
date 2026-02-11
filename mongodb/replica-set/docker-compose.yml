@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  mongodb-primary:
+    image: mongo:7
+    container_name: mongodb-primary
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin_password
+      MONGO_INITDB_REPLICA_SET_NAME: rs0
+      TZ: Asia/Shanghai
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-primary-data:/data/db
+      - ./init-replica.sh:/scripts/init-replica.sh:ro
+    entrypoint: ["/bin/bash", "/scripts/init-replica.sh"]
+    networks:
+      - mongodb-replica-net
+
+  mongodb-secondary1:
+    image: mongo:7
+    container_name: mongodb-secondary1
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin_password
+      MONGO_INITDB_REPLICA_SET_NAME: rs0
+      TZ: Asia/Shanghai
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb-secondary1-data:/data/db
+    entrypoint: mongod --replSet rs0 --auth
+    networks:
+      - mongodb-replica-net
+    depends_on:
+      - mongodb-primary
+
+  mongodb-secondary2:
+    image: mongo:7
+    container_name: mongodb-secondary2
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin_password
+      MONGO_INITDB_REPLICA_SET_NAME: rs0
+      TZ: Asia/Shanghai
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongodb-secondary2-data:/data/db
+    entrypoint: mongod --replSet rs0 --auth
+    networks:
+      - mongodb-replica-net
+    depends_on:
+      - mongodb-primary
+
+volumes:
+  mongodb-primary-data:
+    driver: local
+  mongodb-secondary1-data:
+    driver: local
+  mongodb-secondary2-data:
+    driver: local
+
+networks:
+  mongodb-replica-net:
+    driver: bridge

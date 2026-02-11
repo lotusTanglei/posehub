@@ -1,0 +1,33 @@
+# 集群名称
+cluster.name: es-cluster
+
+# 节点名称（通过环境变量设置）
+# node.name: es-node1
+
+# 数据和日志路径
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+# 内存锁定
+bootstrap.memory_lock: false
+
+# 网络配置
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+# 发现配置
+discovery.seed_hosts: ["es-node1", "es-node2", "es-node3"]
+cluster.initial_master_nodes: ["es-node1", "es-node2", "es-node3"]
+
+# 索引设置
+index.number_of_shards: 3
+index.number_of_replicas: 2
+
+# 安全配置
+xpack.security.enabled: true
+xpack.security.http.ssl.enabled: false
+xpack.security.transport.ssl.enabled: false
+
+# 监控配置
+xpack.monitoring.collection.enabled: true
