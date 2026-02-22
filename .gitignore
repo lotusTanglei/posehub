@@ -19,3 +19,4 @@ mongodb/replica-set/keyfile
 
 # Environment Variables (Safety)
 .env
+.trae
