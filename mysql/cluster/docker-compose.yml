@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mysql-master:
     image: mysql:8.0
@@ -72,7 +70,7 @@ services:
 
   # 负载均衡
   proxy:
-    image: proxysql/proxysql:2.5.0
+    image: proxysql/proxysql:2.5.5
     container_name: mysql-proxy
     restart: unless-stopped
     ports:

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mongodb-primary:
     image: mongo:7
@@ -14,8 +12,8 @@ services:
       - "27017:27017"
     volumes:
       - mongodb-primary-data:/data/db
-      - ./init-replica.sh:/scripts/init-replica.sh:ro
-    entrypoint: ["/bin/bash", "/scripts/init-replica.sh"]
+      - ./keyfile:/data/keyfile:ro
+    command: ["mongod", "--replSet", "rs0", "--keyFile", "/data/keyfile", "--bind_ip_all"]
     networks:
       - mongodb-replica-net
 
@@ -32,7 +30,8 @@ services:
       - "27018:27017"
     volumes:
       - mongodb-secondary1-data:/data/db
-    entrypoint: mongod --replSet rs0 --auth
+      - ./keyfile:/data/keyfile:ro
+    command: ["mongod", "--replSet", "rs0", "--keyFile", "/data/keyfile", "--bind_ip_all"]
     networks:
       - mongodb-replica-net
     depends_on:
@@ -51,11 +50,25 @@ services:
       - "27019:27017"
     volumes:
       - mongodb-secondary2-data:/data/db
-    entrypoint: mongod --replSet rs0 --auth
+      - ./keyfile:/data/keyfile:ro
+    command: ["mongod", "--replSet", "rs0", "--keyFile", "/data/keyfile", "--bind_ip_all"]
     networks:
       - mongodb-replica-net
     depends_on:
       - mongodb-primary
+
+  mongodb-setup:
+    image: mongo:7
+    container_name: mongodb-setup
+    depends_on:
+      - mongodb-primary
+      - mongodb-secondary1
+      - mongodb-secondary2
+    volumes:
+      - ./init-replica.sh:/scripts/init-replica.sh:ro
+    entrypoint: ["/bin/bash", "/scripts/init-replica.sh"]
+    networks:
+      - mongodb-replica-net
 
 volumes:
   mongodb-primary-data:

@@ -1,0 +1,58 @@
+name: Multi-Arch Compatibility Verification
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  verify-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [amd64]  # Currently GitHub Actions free tier only supports amd64 (x86_64) easily
+        # Note: To test arm64, you would typically need a self-hosted runner or use QEMU emulation (which is very slow for DBs).
+        # If you have GitHub Enterprise or pay for larger runners, you can enable arm64 here.
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        # This step installs QEMU static binaries, allowing you to run arm64 containers on x86_64 runners.
+        # However, be warned: Emulated database startups (like Postgres/Elasticsearch) can be extremely slow and might time out.
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Tests (x86_64 / Native)
+        if: matrix.architecture == 'amd64'
+        run: |
+          # Run the full test suite
+          # We use --reset to ensure a clean slate in CI
+          python3 run_tests.py --reset --ci
+
+      - name: Run Tests (ARM64 / Emulated)
+        if: matrix.architecture == 'arm64'
+        env:
+          # Force Docker to pull ARM64 images even on x86 host
+          DOCKER_DEFAULT_PLATFORM: linux/arm64
+        run: |
+          echo "⚠️ Running in EMULATION mode. Expect slow performance."
+          python3 run_tests.py --reset --ci
+
+      - name: Upload Test Results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ matrix.architecture }}
+          path: test_status.json

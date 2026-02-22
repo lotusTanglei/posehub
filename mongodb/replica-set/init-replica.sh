@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# 等待 MongoDB 启动
-sleep 10
+echo "Waiting for mongodb-primary to be ready..."
+
+# 循环检查直到能够连接
+until mongosh --host mongodb-primary --port 27017 -u admin -p admin_password --authenticationDatabase admin --eval "print(\"waited for connection\")"
+do
+    echo "Retrying connection..."
+    sleep 2
+done
+
+echo "MongoDB is ready. Initiating replica set..."
 
 # 初始化副本集
 mongosh --host mongodb-primary --port 27017 -u admin -p admin_password --authenticationDatabase admin <<EOF
@@ -15,5 +23,4 @@ rs.initiate({
 })
 EOF
 
-# 保持容器运行
-tail -f /dev/null
+echo "Replica set initialized."

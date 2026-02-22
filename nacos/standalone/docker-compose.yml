@@ -1,0 +1,31 @@
+
+services:
+  nacos:
+    image: nacos/nacos-server:v2.4.1
+    container_name: nacos-standalone
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_TOKEN_EXPIRE_SECONDS=86400
+      - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
+      - NACOS_AUTH_IDENTITY_KEY=example
+      - NACOS_AUTH_IDENTITY_VALUE=example
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - nacos-logs:/home/nacos/logs
+      - nacos-data:/home/nacos/data
+    restart: always
+    networks:
+      - nacos-net
+
+volumes:
+  nacos-logs:
+  nacos-data:
+
+networks:
+  nacos-net:
+    driver: bridge
