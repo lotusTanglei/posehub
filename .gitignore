@@ -1,0 +1,21 @@
+# Test Artifacts
+test_status.json
+*.log
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+
+# IDE
+.vscode/
+.idea/
+
+# Generated Files
+mongodb/replica-set/keyfile
+
+# Environment Variables (Safety)
+.env
